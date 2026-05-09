@@ -2,6 +2,14 @@
 
 MERN hospital management MVP with role-based dashboards for Admin, Doctor, and Nurse users.
 
+## Features
+
+- Admin dashboard with patient, staff, appointment, and ward statistics.
+- Staff management for creating, editing, activating/deactivating, and deleting doctor or nurse accounts.
+- Patient registration and management with role-based access.
+- Appointment scheduling and status tracking.
+- Doctor medical records and nurse ward workflows.
+
 ## Prerequisites Checked
 
 - Node.js and npm are required.
@@ -64,10 +72,10 @@ Deploy the frontend and backend as separate Vercel projects:
 
 ```bash
 cd client
-vercel --prod --name MERN_Frontend
+vercel --prod
 
 cd ../server
-vercel --prod --name MERN_Backend
+vercel --prod
 ```
 
 Backend environment variables in Vercel:

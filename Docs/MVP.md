@@ -37,7 +37,7 @@ A role-based Hospital Management System that allows hospital staff to manage pat
 | API Style | RESTful |
 | Database | MongoDB Atlas (Cloud) |
 | Frontend Hosting | Vercel |
-| Backend Hosting | Render / Railway |
+| Backend Hosting | Vercel |
 
 ---
 
@@ -165,7 +165,9 @@ npx tailwindcss init -p
 | View own profile | ✅ | ✅ | ✅ |
 | Create staff accounts | ✅ | ❌ | ❌ |
 | View all staff | ✅ | ❌ | ❌ |
+| Edit staff accounts | ✅ | ❌ | ❌ |
 | Deactivate staff | ✅ | ❌ | ❌ |
+| Delete staff accounts | ✅ | ❌ | ❌ |
 | Register patient | ✅ | ❌ | ✅ |
 | View all patients | ✅ | ✅ | ✅ |
 | Edit patient info | ✅ | ❌ | ✅ |
@@ -191,7 +193,7 @@ npx tailwindcss init -p
 
 ### 5.2 Admin Features
 - **Dashboard:** Total patients, total staff (Doctors + Nurses), appointments today, ward occupancy count
-- **Staff Management:** Create Doctor/Nurse accounts (name, email, password, specialization/ward), view all staff, toggle active/inactive status
+- **Staff Management:** Create Doctor/Nurse accounts, edit staff details, view all staff, toggle active/inactive status, and delete staff accounts with confirmation
 - **Patient Management:** View all patients, delete patient records
 - **Appointment Overview:** View all appointments across all doctors, filter by date/doctor/status
 - **Ward Management:** Create wards, assign nurses to wards
@@ -320,6 +322,7 @@ const WardSchema = new mongoose.Schema({
 | POST | `/` | Admin | Create a new Doctor or Nurse account |
 | GET | `/` | Admin | Get all staff members |
 | GET | `/:id` | Admin | Get single staff member |
+| PUT | `/:id` | Admin | Update staff account details |
 | PUT | `/:id/status` | Admin | Toggle active/inactive |
 | DELETE | `/:id` | Admin | Delete staff account |
 | GET | `/doctors` | Admin, Nurse | Get all active doctors (for appointment scheduling) |
@@ -439,8 +442,7 @@ const authorize = (...roles) => {
 /login                          → LoginPage (public)
 
 /admin                          → AdminDashboard
-/admin/staff                    → StaffList
-/admin/staff/new                → CreateStaffForm
+/admin/staff                    → StaffManagement (create, edit, activate/deactivate, delete)
 /admin/patients                 → PatientList (admin view)
 /admin/appointments             → AllAppointments
 /admin/wards                    → WardManagement
@@ -510,7 +512,7 @@ export const AuthProvider = ({ children }) => {
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api'),
 });
 
 api.interceptors.request.use((config) => {
@@ -596,9 +598,9 @@ VITE_API_URL=http://localhost:5000/api
 
 | Key | Value |
 |---|---|
-| `VITE_API_URL` | `https://your-backend.onrender.com/api` |
+| `VITE_API_URL` | `/api` when using the client rewrite, or `https://your-backend.vercel.app/api` when calling the API directly |
 
-### Render (server) — Environment Variables
+### Vercel (server) — Environment Variables
 
 | Key | Value |
 |---|---|
@@ -667,32 +669,47 @@ seed();
 
 ## 12. Deployment Guide
 
-### Backend → Render (Free Tier)
+### Backend → Vercel
 
-1. Push `server/` code to GitHub
-2. Go to [render.com](https://render.com) → New Web Service
-3. Connect GitHub repo → Set root directory to `server`
-4. Build command: `npm install`
-5. Start command: `node server.js`
-6. Add all environment variables from `server/.env`
-7. Deploy → Copy the live URL (e.g. `https://hms-api.onrender.com`)
+1. Add production environment variables in the Vercel project: `MONGO_URI`, `JWT_SECRET`, `CLIENT_URL`, and `NODE_ENV=production`.
+2. Deploy from the backend folder:
+
+```bash
+cd server
+vercel --prod
+```
+
+The backend exposes Express through `server/api/index.js`, with API routes mounted under `/api`.
 
 ### Frontend → Vercel
 
-1. Push `client/` code to GitHub
-2. Go to [vercel.com](https://vercel.com) → New Project
-3. Import GitHub repo → Set root directory to `client`
-4. Framework: Vite
-5. Add environment variable: `VITE_API_URL` = `https://hms-api.onrender.com/api`
-6. Deploy → Get live URL (e.g. `https://hms.vercel.app`)
+1. Add `VITE_API_URL=/api` if using the frontend rewrite, or set it to the deployed backend URL plus `/api`.
+2. Deploy from the frontend folder:
 
-### CORS Configuration (server.js)
+```bash
+cd client
+vercel --prod
+```
+
+The frontend uses Vite and the `client/vercel.json` rewrite can proxy `/api/*` requests to the deployed backend.
+
+### CORS Configuration
 
 ```javascript
-app.use(cors({
-  origin: process.env.CLIENT_URL,
-  credentials: true,
-}));
+// server/app.js
+app.use((req, res, next) => {
+  const origin = req.headers.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
 ```
 
 ---
@@ -713,7 +730,7 @@ app.use(cors({
 ### Phase 2 — Core Backend (Day 1–2)
 - [ ] Patient CRUD routes + controllers
 - [ ] Appointment routes + controllers
-- [ ] Staff management routes (Admin)
+- [ ] Staff management CRUD routes (Admin)
 - [ ] Medical Records routes (Doctor)
 - [ ] Ward routes (Admin)
 - [ ] Stats endpoints for all 3 roles
@@ -721,7 +738,7 @@ app.use(cors({
 ### Phase 3 — Core Frontend (Day 2–3)
 - [ ] Shared layout: Navbar + Sidebar (role-aware)
 - [ ] Admin Dashboard (stat cards)
-- [ ] Admin: Staff management page + create staff form
+- [ ] Admin: Staff management page with create, edit, activate/deactivate, and delete actions
 - [ ] Admin: Appointments overview table
 - [ ] Admin: Ward management
 - [ ] Doctor Dashboard
@@ -737,7 +754,7 @@ app.use(cors({
 - [ ] Form validation (react-hook-form)
 - [ ] Loading states on all data fetches
 - [ ] Responsive layout for all pages
-- [ ] Deploy backend to Render
+- [ ] Deploy backend to Vercel
 - [ ] Deploy frontend to Vercel
 - [ ] Test all 3 role flows end-to-end on live URLs
 - [ ] Update README with GitHub + Vercel links

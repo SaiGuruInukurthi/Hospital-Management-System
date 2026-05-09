@@ -230,10 +230,39 @@ npm run preview
 2. Start the backend.
 3. Start the frontend.
 4. Login as admin.
-5. Create doctor and nurse accounts.
+5. Create, edit, activate/deactivate, and delete doctor or nurse staff accounts from Admin > Staff.
 6. Register patients.
 7. Create appointments.
 8. Login as doctor or nurse to test role-based pages.
+
+## Deployment With Vercel CLI
+
+Deploy the frontend and backend as separate Vercel projects.
+
+Backend:
+
+```powershell
+cd server
+vercel --prod
+```
+
+Required backend environment variables in Vercel:
+
+- `MONGO_URI`
+- `JWT_SECRET`
+- `CLIENT_URL`
+- `NODE_ENV=production`
+
+Frontend:
+
+```powershell
+cd client
+vercel --prod
+```
+
+Required frontend environment variable in Vercel:
+
+- `VITE_API_URL` - use `/api` for the configured frontend rewrite, or use the deployed backend URL plus `/api`.
 
 ## Troubleshooting
 
@@ -286,7 +315,7 @@ Before deployment:
 - Use a strong production `JWT_SECRET`.
 - Use a restricted Atlas IP access list when possible.
 - Set `CLIENT_URL` to the deployed frontend URL.
-- Set `VITE_API_URL` to the deployed backend URL plus `/api`.
+- Set `VITE_API_URL` to `/api` when using the frontend rewrite, or to the deployed backend URL plus `/api`.
 - Do not commit `.env` files.
 - Change or remove the seeded admin credentials.
 
