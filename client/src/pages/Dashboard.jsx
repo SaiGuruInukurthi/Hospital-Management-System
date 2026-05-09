@@ -42,9 +42,13 @@ export default function Dashboard() {
         <h2>{user.name}'s dashboard</h2>
       </div>
       <div className="stats-grid">
-        {(cardsByRole[user.role] || []).map(([key, label, Icon, tone]) => (
-          <StatCard key={key} label={label} value={Array.isArray(stats[key]) ? stats[key].length : stats[key]} icon={Icon} tone={tone} />
-        ))}
+        {(cardsByRole[user.role] || []).map(([key, label, Icon, tone]) => {
+          const raw = Array.isArray(stats[key]) ? stats[key].length : stats[key] || 0;
+          // build a tiny trend array around the raw value
+          const base = Number(raw || 0);
+          const spark = [base - 2, base - 1, base, base + 1, base + 2].map((v) => Math.max(0, v));
+          return <StatCard key={key} label={label} value={raw} icon={Icon} tone={tone} spark={spark} />;
+        })}
       </div>
     </section>
   );
