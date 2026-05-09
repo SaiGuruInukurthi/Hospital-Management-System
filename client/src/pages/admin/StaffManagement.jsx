@@ -1,4 +1,5 @@
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Save, X, Edit2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import api from '../../api/axiosInstance';
@@ -10,20 +11,45 @@ import useResource from '../../hooks/useResource';
 
 export default function StaffManagement() {
   const { data: staff, loading, reload } = useResource('/staff', 'staff');
-  const { formState: { errors, isSubmitting }, handleSubmit, register, reset, watch } = useForm({
+  const [editingId, setEditingId] = useState(null);
+  
+  const { formState: { errors, isSubmitting }, handleSubmit, register, reset, watch, setValue } = useForm({
     defaultValues: { role: 'doctor' }
   });
   const role = watch('role');
 
   const onSubmit = async (values) => {
     try {
-      await api.post('/staff', values);
-      toast.success('Staff account created');
+      if (editingId) {
+        await api.put(`/staff/${editingId}`, values);
+        toast.success('Staff account updated');
+        setEditingId(null);
+      } else {
+        await api.post('/staff', values);
+        toast.success('Staff account created');
+      }
       reset({ role: 'doctor' });
       reload();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Could not create staff account');
+      toast.error(error.response?.data?.message || `Could not ${editingId ? 'update' : 'create'} staff account`);
     }
+  };
+
+  const handleEdit = (row) => {
+    setEditingId(row._id);
+    reset({
+      name: row.name,
+      email: row.email,
+      role: row.role,
+      specialization: row.specialization || '',
+      department: row.department || '',
+      phone: row.phone || ''
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    reset({ role: 'doctor' });
   };
 
   if (loading) return <Loader label="Loading staff" />;
@@ -47,12 +73,17 @@ export default function StaffManagement() {
               key: 'actions',
               header: '',
               render: (row) => (
-                <button className="ghost-button" type="button" onClick={async () => {
-                  await api.put(`/staff/${row._id}/status`);
-                  reload();
-                }}>
-                  Toggle
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="icon-button" type="button" onClick={() => handleEdit(row)} title="Edit">
+                    <Edit2 size={16} />
+                  </button>
+                  <button className="ghost-button" type="button" onClick={async () => {
+                    await api.put(`/staff/${row._id}/status`);
+                    reload();
+                  }}>
+                    Toggle
+                  </button>
+                </div>
               )
             }
           ]}
@@ -60,7 +91,14 @@ export default function StaffManagement() {
       </div>
 
       <aside className="side-panel">
-        <h3>Create staff</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3>{editingId ? 'Edit staff' : 'Create staff'}</h3>
+          {editingId && (
+            <button className="icon-button" type="button" onClick={cancelEdit} title="Cancel">
+              <X size={20} />
+            </button>
+          )}
+        </div>
         <form className="form-grid" onSubmit={handleSubmit(onSubmit)}>
           <FormField label="Name" error={errors.name}>
             <input {...register('name', { required: 'Name is required' })} />
@@ -68,11 +106,13 @@ export default function StaffManagement() {
           <FormField label="Email" error={errors.email}>
             <input type="email" {...register('email', { required: 'Email is required' })} />
           </FormField>
-          <FormField label="Password" error={errors.password}>
-            <input type="password" {...register('password', { required: 'Password is required', minLength: { value: 8, message: 'Use at least 8 characters' } })} />
-          </FormField>
+          {!editingId && (
+            <FormField label="Password" error={errors.password}>
+              <input type="password" {...register('password', { required: 'Password is required', minLength: { value: 8, message: 'Use at least 8 characters' } })} />
+            </FormField>
+          )}
           <FormField label="Role">
-            <select {...register('role')}>
+            <select {...register('role')} disabled={editingId ? true : false}>
               <option value="doctor">Doctor</option>
               <option value="nurse">Nurse</option>
             </select>
@@ -91,8 +131,8 @@ export default function StaffManagement() {
             <input {...register('phone')} />
           </FormField>
           <button className="primary-button" type="submit" disabled={isSubmitting}>
-            <UserPlus size={18} />
-            {isSubmitting ? 'Creating' : 'Create account'}
+            {editingId ? <Save size={18} /> : <UserPlus size={18} />}
+            {isSubmitting ? (editingId ? 'Saving' : 'Creating') : (editingId ? 'Save changes' : 'Create account')}
           </button>
         </form>
       </aside>

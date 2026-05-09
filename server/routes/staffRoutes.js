@@ -6,7 +6,8 @@ const {
   getDoctors,
   getStaff,
   getStaffById,
-  toggleStaffStatus
+  toggleStaffStatus,
+  updateStaff
 } = require('../controllers/staffController');
 const protect = require('../middleware/authMiddleware');
 const authorize = require('../middleware/roleMiddleware');
@@ -31,6 +32,7 @@ router.post(
 );
 router.get('/', authorize('admin'), getStaff);
 router.get('/:id', authorize('admin'), getStaffById);
+router.put('/:id', authorize('admin'), updateStaff);
 router.put('/:id/status', authorize('admin'), toggleStaffStatus);
 router.delete('/:id', authorize('admin'), deleteStaff);
 

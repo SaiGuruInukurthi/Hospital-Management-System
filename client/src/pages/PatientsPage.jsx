@@ -1,4 +1,5 @@
-import { Save, Trash2 } from 'lucide-react';
+import { Save, Trash2, Edit2, X } from 'lucide-react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import api from '../api/axiosInstance';
@@ -14,19 +15,45 @@ export default function PatientsPage() {
   const { user } = useAuth();
   const canWrite = ['admin', 'nurse'].includes(user.role);
   const { data: patients, loading, reload } = useResource('/patients', 'patients');
+  const [editingId, setEditingId] = useState(null);
   const { formState: { errors, isSubmitting }, handleSubmit, register, reset } = useForm({
     defaultValues: { gender: 'Male', bloodGroup: 'O+' }
   });
 
   const onSubmit = async (values) => {
     try {
-      await api.post('/patients', values);
-      toast.success('Patient registered');
+      if (editingId) {
+        await api.put(`/patients/${editingId}`, values);
+        toast.success('Patient updated');
+        setEditingId(null);
+      } else {
+        await api.post('/patients', values);
+        toast.success('Patient registered');
+      }
       reset({ gender: 'Male', bloodGroup: 'O+' });
       reload();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Could not save patient');
+      toast.error(error.response?.data?.message || `Could not ${editingId ? 'update' : 'save'} patient`);
     }
+  };
+
+  const handleEdit = (row) => {
+    setEditingId(row._id);
+    const dateStr = row.dateOfBirth ? new Date(row.dateOfBirth).toISOString().split('T')[0] : '';
+    reset({
+      name: row.name,
+      dateOfBirth: dateStr,
+      gender: row.gender,
+      bloodGroup: row.bloodGroup,
+      phone: row.phone || '',
+      email: row.email || '',
+      address: row.address || ''
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    reset({ gender: 'Male', bloodGroup: 'O+' });
   };
 
   if (loading) return <Loader label="Loading patients" />;
@@ -50,13 +77,20 @@ export default function PatientsPage() {
             {
               key: 'actions',
               header: '',
-              render: (row) => user.role === 'admin' ? (
-                <button className="icon-button danger" type="button" title="Delete patient" onClick={async () => {
-                  await api.delete(`/patients/${row._id}`);
-                  reload();
-                }}>
-                  <Trash2 size={16} />
-                </button>
+              render: (row) => canWrite ? (
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <button className="icon-button" type="button" title="Edit patient" onClick={() => handleEdit(row)}>
+                    <Edit2 size={16} />
+                  </button>
+                  {user.role === 'admin' && (
+                    <button className="icon-button danger" type="button" title="Delete patient" onClick={async () => {
+                      await api.delete(`/patients/${row._id}`);
+                      reload();
+                    }}>
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
               ) : null
             }
           ]}
@@ -65,7 +99,14 @@ export default function PatientsPage() {
 
       {canWrite ? (
         <aside className="side-panel">
-          <h3>Register patient</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3>{editingId ? 'Edit patient' : 'Register patient'}</h3>
+            {editingId && (
+              <button className="icon-button" type="button" onClick={cancelEdit} title="Cancel">
+                <X size={20} />
+              </button>
+            )}
+          </div>
           <form className="form-grid" onSubmit={handleSubmit(onSubmit)}>
             <FormField label="Name" error={errors.name}>
               <input {...register('name', { required: 'Name is required' })} />
@@ -90,7 +131,7 @@ export default function PatientsPage() {
             </FormField>
             <button className="primary-button" type="submit" disabled={isSubmitting}>
               <Save size={18} />
-              {isSubmitting ? 'Saving' : 'Register patient'}
+              {isSubmitting ? 'Saving' : (editingId ? 'Save changes' : 'Register patient')}
             </button>
           </form>
         </aside>

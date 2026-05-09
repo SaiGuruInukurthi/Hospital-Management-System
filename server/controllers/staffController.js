@@ -69,6 +69,36 @@ exports.toggleStaffStatus = asyncHandler(async (req, res) => {
   res.json({ staff: updated });
 });
 
+exports.updateStaff = asyncHandler(async (req, res) => {
+  const staff = await User.findById(req.params.id);
+  if (!staff || !['doctor', 'nurse'].includes(staff.role)) {
+    return res.status(404).json({ message: 'Staff member not found' });
+  }
+
+  const { name, email, specialization, department, phone, wardAssigned } = req.body;
+  if (name) staff.name = name;
+  if (email && email !== staff.email) {
+    const existing = await User.findOne({ email: String(email).toLowerCase() });
+    if (existing) return res.status(409).json({ message: 'Email is already registered' });
+    staff.email = email;
+  }
+  
+  if (staff.role === 'doctor') {
+    if (specialization !== undefined) staff.specialization = specialization;
+    if (department !== undefined) staff.department = department;
+  }
+  
+  if (staff.role === 'nurse' && wardAssigned) {
+    staff.wardAssigned = wardAssigned;
+  }
+
+  if (phone !== undefined) staff.phone = phone;
+
+  await staff.save();
+  const updated = await User.findById(staff._id).select('-password').populate('wardAssigned');
+  res.json({ staff: updated });
+});
+
 exports.deleteStaff = asyncHandler(async (req, res) => {
   const staff = await User.findById(req.params.id);
   if (!staff || !['doctor', 'nurse'].includes(staff.role)) {
