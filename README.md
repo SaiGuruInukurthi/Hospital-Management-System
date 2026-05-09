@@ -57,3 +57,32 @@ Sample staff accounts:
 - Doctor: `daniel.lee@hospital.com` / `Doctor@123`
 - Nurse: `priya.shah@hospital.com` / `Nurse@123`
 - Nurse: `olivia.brown@hospital.com` / `Nurse@123`
+
+## Vercel deployment
+
+Deploy the frontend and backend as separate Vercel projects:
+
+```bash
+cd client
+vercel --prod --name MERN_Frontend
+
+cd ../server
+vercel --prod --name MERN_Backend
+```
+
+Backend environment variables in Vercel:
+
+- `MONGO_URI` - your MongoDB Atlas connection string
+- `JWT_SECRET` - a long random secret used for auth tokens
+- `CLIENT_URL` - the deployed frontend URL on Vercel
+- `NODE_ENV=production`
+
+Frontend environment variables in Vercel:
+
+- `VITE_API_URL` - set this to `/api` so the frontend calls go through the Vercel rewrite and stay same-origin
+
+If you want the deployed app to have demo data, run the seed script against the same MongoDB Atlas database before or after deployment:
+
+```bash
+npm run seed --prefix server
+```
