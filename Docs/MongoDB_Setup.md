@@ -50,23 +50,21 @@ Avoid using `0.0.0.0/0` for long-term projects because it allows connections fro
 4. Select Node.js as the driver.
 5. Copy the `mongodb+srv://...` connection string.
 
-It will look similar to this:
+Atlas provides the full URI in the connection dialog. Treat that value as a secret and do not commit it to Git.
 
 ```env
-mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+MONGO_URI=<paste-your-atlas-connection-string-here>
 ```
 
-For this app, add a database name before the query string:
+For this app, make sure the URI includes a database name such as `hospital_db`.
 
 ```env
-mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/hospital_db?retryWrites=true&w=majority
+MONGO_URI=<paste-your-atlas-connection-string-with-database-name-here>
 ```
 
 Replace:
 
-- `<username>` with your Atlas database username.
-- `<password>` with your Atlas database password.
-- `cluster0.xxxxx.mongodb.net` with your real Atlas cluster host.
+- The placeholder with the full Atlas URI copied from MongoDB Atlas.
 - `hospital_db` with your preferred database name.
 
 If your password contains special characters such as `@`, `#`, `/`, `?`, or `&`, URL-encode the password before placing it in the URI.
@@ -83,7 +81,7 @@ Then edit `server/.env`:
 
 ```env
 PORT=5000
-MONGO_URI=mongodb+srv://your_user:your_password@your_cluster.mongodb.net/hospital_db?retryWrites=true&w=majority
+MONGO_URI=<paste-your-atlas-connection-string-here>
 JWT_SECRET=replace_with_a_long_random_secret
 NODE_ENV=development
 CLIENT_URL=http://localhost:5173

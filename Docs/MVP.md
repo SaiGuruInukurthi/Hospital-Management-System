@@ -582,7 +582,7 @@ roleMiddleware.js checks req.user.role against route requirements
 
 ```env
 PORT=5000
-MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/hospital_db
+MONGO_URI=<paste-your-atlas-connection-string-here>
 JWT_SECRET=your_super_secret_jwt_key_change_this
 NODE_ENV=development
 CLIENT_URL=http://localhost:5173

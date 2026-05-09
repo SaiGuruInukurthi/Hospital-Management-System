@@ -65,7 +65,7 @@ Set these values:
 
 ```env
 PORT=5000
-MONGO_URI=mongodb+srv://your_user:your_password@your_cluster.mongodb.net/hospital_db?retryWrites=true&w=majority
+MONGO_URI=<paste-your-atlas-connection-string-here>
 JWT_SECRET=replace_with_a_long_random_secret
 NODE_ENV=development
 CLIENT_URL=http://localhost:5173
