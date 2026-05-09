@@ -1,4 +1,4 @@
-import { UserPlus, Save, X, Edit2 } from 'lucide-react';
+import { UserPlus, Save, X, Edit2, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -52,6 +52,22 @@ export default function StaffManagement() {
     reset({ role: 'doctor' });
   };
 
+  const handleDelete = async (row) => {
+    const ok = window.confirm(`Delete ${row.name}? This action cannot be undone.`);
+    if (!ok) return;
+
+    try {
+      await api.delete(`/staff/${row._id}`);
+      if (editingId === row._id) {
+        cancelEdit();
+      }
+      toast.success('Staff member deleted');
+      reload();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not delete staff member');
+    }
+  };
+
   if (loading) return <Loader label="Loading staff" />;
 
   return (
@@ -76,6 +92,9 @@ export default function StaffManagement() {
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button className="icon-button" type="button" onClick={() => handleEdit(row)} title="Edit">
                     <Edit2 size={16} />
+                  </button>
+                  <button className="icon-button danger" type="button" onClick={() => handleDelete(row)} title="Delete">
+                    <Trash2 size={16} />
                   </button>
                   <button className="ghost-button" type="button" onClick={async () => {
                     await api.put(`/staff/${row._id}/status`);
